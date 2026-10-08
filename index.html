@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Смена — Новосибирск</title>
+<meta name="theme-color" content="#14213D" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Смена" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // та же палитра и шрифты, что в Досатуе и Табеле
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          diesel: { DEFAULT: "#14213D", 700: "#1B2C50", 500: "#26406E" },
+          route:  { DEFAULT: "#F2A93B", 600: "#D98F1F" },
+          brick:  { DEFAULT: "#C6432B" },
+          shift:  { DEFAULT: "#2F9E64" },
+        },
+        fontFamily: {
+          display: ["'Space Grotesk'", "sans-serif"],
+          sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+          mono: ["'JetBrains Mono'", "monospace"],
+        },
+      },
+    },
+  };
+</script>
+<!-- ВАЖНО: версия Firebase та же (9.23.0), что в Досатуе и Табеле. Все три
+     приложения живут на одном адресе и делят один офлайн-кэш базы; если
+     здесь поставить версию новее, у двух других сломается работа без сети. -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+<style>
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: #EEF0F3; }
+  .font-num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  .hidden { display: none; }
+  .tab-active { color: #F2A93B !important; }
+  .tab-active .tabicon-wrap { background: rgba(242,169,59,0.16); }
+  ::-webkit-scrollbar { height: 6px; width: 6px; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid #F2A93B; outline-offset: 2px;
+  }
+  /* сетка месяца: день без смены — «пустая клетка табеля» */
+  .daycell { aspect-ratio: 1 / 1; }
+  .daycell-empty { background-image: repeating-linear-gradient(135deg, #E2E5EA 0 1px, transparent 1px 6px); }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen pb-24">
+
+  <div id="auth-screen">
+    <!-- заглушка до загрузки: без неё при плохой связи был бы белый экран -->
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#14213D;color:rgba(255,255,255,.55);font-size:14px;">Загрузка…</div>
+  </div>
+
+  <div id="app-shell" class="hidden">
+    <header class="bg-diesel text-white px-4 pt-5 pb-5">
+      <div class="flex items-center gap-2 text-xs mb-3" id="user-bar"></div>
+      <div id="header-hero"></div>
+    </header>
+
+    <main id="app" class="max-w-md mx-auto px-3 mt-4 space-y-3"></main>
+
+    <nav id="nav" class="fixed bottom-0 left-0 right-0 bg-diesel flex justify-around items-center py-2 shadow-[0_-4px_16px_rgba(0,0,0,0.25)] z-10" style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));"></nav>
+  </div>
+
+  <script src="firebase-config.js"></script>
+  <script src="settings.js"></script>
+  <script src="app.js"></script>
+  <script src="outbox.js"></script>
+  <script src="shifts.js"></script>
+  <script src="money.js"></script>
+  <script src="chat.js"></script>
+  <script src="notifications.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>
