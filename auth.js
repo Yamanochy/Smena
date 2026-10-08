@@ -25,17 +25,24 @@ function showAuth() { shell.classList.add("hidden"); authScreen.classList.remove
 // общая рамка для экранов входа и ожидания
 function authFrame(innerHtml) {
   showAuth();
+  // Рамка прижата к верху, а не выровнена по центру: под формой позже
+  // появляется подсказка про установку, и при выравнивании по центру поля
+  // входа уезжали бы из-под пальца.
   authScreen.innerHTML = `
-    <div class="min-h-screen flex items-center justify-center px-5 py-8 bg-diesel">
+    <div class="min-h-screen flex items-start justify-center px-5 pb-8 bg-diesel" style="padding-top:max(2rem,12vh)">
       <div class="w-full max-w-sm">
         <div class="text-center mb-6">
           <img src="icon-192.png" alt="" class="w-16 h-16 rounded-2xl mx-auto mb-3 shadow" />
           <div class="text-white text-2xl font-bold font-display">Смена</div>
           <div class="text-white/50 text-xs font-num tracking-wide mt-1">ТЕХНИКА · НОВОСИБИРСК</div>
         </div>
+        <div data-install-slot data-variant="auth" data-place="top" class="mb-4" hidden></div>
         <div class="bg-white rounded-xl p-5 space-y-3">${innerHtml}</div>
+        <div data-install-slot data-variant="auth" data-place="bottom" class="mt-4" hidden></div>
       </div>
     </div>`;
+  // кнопка «Установить на телефон» и подсказки — см. install.js
+  if (typeof refreshInstallUi === "function") refreshInstallUi();
 }
 
 const INPUT_CLS = "mt-1 w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm";

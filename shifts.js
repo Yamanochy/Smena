@@ -114,6 +114,11 @@ function renderDriverShifts() {
     return;
   }
 
+  // подсказки про установку на телефон (install.js): сверху — только просьба
+  // открыть страницу в обычном браузере, остальное — внизу, под списком
+  const hasInstall = typeof installSlot === "function";
+  if (hasInstall) wrap.appendChild(installSlot("inapp", "top"));
+
   wrap.appendChild(monthSwitcher());
   wrap.appendChild(renderMonthGrid());
 
@@ -137,6 +142,7 @@ function renderDriverShifts() {
     card.appendChild(body);
   }
   wrap.appendChild(card);
+  if (hasInstall) wrap.appendChild(installSlot("inapp", "bottom"));
   app.appendChild(wrap);
 }
 
@@ -600,6 +606,8 @@ function managerTotals() {
 function renderManagerShifts() {
   app.innerHTML = "";
   const wrap = el("div", "space-y-3");
+  const hasInstall = typeof installSlot === "function";
+  if (hasInstall) wrap.appendChild(installSlot("inapp", "top"));
   wrap.appendChild(monthSwitcher());
 
   // кто зарегистрировался, но ещё не привязан к карточке водителя
@@ -655,5 +663,6 @@ function renderManagerShifts() {
     });
   }
   wrap.appendChild(card);
+  if (hasInstall) wrap.appendChild(installSlot("inapp", "bottom"));
   app.appendChild(wrap);
 }

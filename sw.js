@@ -6,7 +6,7 @@
 // ============================================================
 
 const CACHE_PREFIX = "smena-";
-const VERSION = CACHE_PREFIX + "v2";
+const VERSION = CACHE_PREFIX + "v3";
 
 // ---------- счётчик непрочитанных для значка на иконке ----------
 function openBadgeDB() {
@@ -93,6 +93,7 @@ const CORE_ASSETS = [
   "./firebase-config.js",
   "./settings.js",
   "./app.js",
+  "./install.js",
   "./outbox.js",
   "./shifts.js",
   "./money.js",
