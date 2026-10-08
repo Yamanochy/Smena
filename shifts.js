@@ -610,7 +610,7 @@ function renderManagerShifts() {
     box.innerHTML = `
       <div class="text-sm font-semibold text-diesel">${waiting.length} ${plural(waiting.length, "водитель ждёт", "водителя ждут", "водителей ждут")} доступа</div>
       <div class="text-xs text-slate-600 mt-1 space-y-0.5">${waiting.map((r) => `<div>${escapeHtml(r.name || "без имени")}${r.phone ? " · " + escapeHtml(r.phone) : ""} · ${escapeHtml(r.email || "")}</div>`).join("")}</div>
-      <div class="text-xs text-slate-500 mt-2">Доступ выдаётся в Табеле: Водители → «Изменить данные» → «Доступ в приложение „Смена“».</div>
+      <div class="text-xs text-slate-500 mt-2">Доступ выдаётся в Табеле: вкладка «Водители», кнопка «Подтвердить» рядом с заявкой.</div>
       <a href="${TABEL_URL}" target="_blank" rel="noopener" class="inline-block mt-2 text-xs font-semibold text-white bg-diesel px-3 py-1.5 rounded-lg">Открыть Табель</a>`;
     wrap.appendChild(box);
   }

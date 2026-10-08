@@ -6,7 +6,7 @@
 // ============================================================
 
 const CACHE_PREFIX = "smena-";
-const VERSION = CACHE_PREFIX + "v1";
+const VERSION = CACHE_PREFIX + "v2";
 
 // ---------- счётчик непрочитанных для значка на иконке ----------
 function openBadgeDB() {
