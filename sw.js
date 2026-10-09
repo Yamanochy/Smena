@@ -6,7 +6,7 @@
 // ============================================================
 
 const CACHE_PREFIX = "smena-";
-const VERSION = CACHE_PREFIX + "v3";
+const VERSION = CACHE_PREFIX + "v4";
 
 // ---------- счётчик непрочитанных для значка на иконке ----------
 function openBadgeDB() {
@@ -90,12 +90,18 @@ self.addEventListener("notificationclick", (e) => {
 const CORE_ASSETS = [
   "./",
   "./index.html",
+  "./ui.css",
   "./firebase-config.js",
   "./settings.js",
   "./app.js",
+  "./lists.js",
   "./install.js",
   "./outbox.js",
   "./shifts.js",
+  "./xl-sheet.js",
+  "./manager.js",
+  "./people.js",
+  "./catalog.js",
   "./money.js",
   "./chat.js",
   "./notifications.js",
@@ -103,13 +109,21 @@ const CORE_ASSETS = [
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
+  "./icon-maskable-192.png",
+  "./icon-maskable-512.png",
+  "./apple-touch-icon.png",
+  // шрифт лежит рядом с приложением — вид не зависит от чужих серверов
+  "./geologica-cyrillic.woff2",
+  "./geologica-latin.woff2",
+  "./geologica-latin-ext.woff2",
 ];
 
 // Внешние библиотеки — тоже нужны офлайн, но если какая-то разово не
 // скачалась, рушить установку из-за неё не стоит: подтянется позже.
+// Модуля Excel здесь нет намеренно: он нужен только руководителю и
+// подгружается по кнопке «Скачать реестр», а водителям трафик не тратит.
 const CDN_ASSETS = [
   "https://cdn.tailwindcss.com",
-  "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap",
   "https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js",
   "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js",
   "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js",

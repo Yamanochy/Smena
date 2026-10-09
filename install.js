@@ -168,7 +168,7 @@ function installView(kind, variant) {
 // Подсказка живёт в «гнёздах» — пустых блоках с пометкой data-install-slot.
 // Меняем только их содержимое: поля входа и открытую форму смены не трогаем,
 // иначе у человека пропадало бы то, что он набирал.
-//   variant: "auth" — на тёмном экране входа, "inapp" — карточка внутри приложения
+//   variant: "auth" — на экране входа, "inapp" — внутри приложения (её можно закрыть крестиком)
 //   place:   "top" — только просьба открыть в браузере (её важно увидеть сразу),
 //            "bottom" — всё остальное (появляется позже и не должно сдвигать кнопки)
 function installSlot(variant, place) {
@@ -204,27 +204,22 @@ function installFillSlotUnsafe(slot) {
   slot.hidden = false;
   slot.dataset.kind = kind;
 
-  const dark = variant === "auth";
-  const box = dark
-    ? "rounded-xl border p-4 " + (view.loud ? "border-route/60 bg-route/10" : "border-white/15 bg-white/5")
-    : "rounded-xl border p-3 " + (view.loud ? "border-route bg-route/10" : "border-slate-200 bg-white");
-  const iconCls = view.good ? (dark ? "bg-shift/25 text-shift" : "bg-shift/15 text-shift") : (dark ? "bg-route/20 text-route" : "bg-route/15 text-route-600");
-  const titleCls = dark ? "text-sm font-semibold text-white" : "text-sm font-semibold text-diesel";
-  const textCls = dark ? "text-xs text-white/65 leading-relaxed" : "text-xs text-slate-500 leading-relaxed";
-  const btnCls = (b) => "mt-3 w-full py-3 rounded-lg text-sm " + (b.primary
-    ? "bg-route text-diesel font-bold"
-    : (dark ? "bg-white/10 text-white font-semibold" : "bg-slate-100 text-diesel font-semibold"));
+  // вид один и тот же на экране входа и внутри приложения (везде тёмный фон)
+  const box = "card p-4" + (view.loud ? " card-accent" : "");
+  const iconCls = view.good ? "bg-signal/15 text-signal" : "bg-gold/15 text-gold";
+  const textCls = "text-[13px] t-soft leading-relaxed";
+  const btnCls = (b) => "btn btn-block mt-3 " + (b.primary ? "btn-gold" : "btn-ghost");
 
   slot.innerHTML = `
     <div class="${box}">
       <div class="flex items-start gap-3">
         <div class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${iconCls}">${INSTALL_ICONS[view.icon]}</div>
         <div class="min-w-0 flex-1">
-          <div class="${titleCls}">${view.title}</div>
+          <div class="t-strong">${view.title}</div>
           ${view.steps ? `<ol class="${textCls} list-decimal pl-4 mt-1 space-y-0.5">${view.steps.map((s) => `<li>${s}</li>`).join("")}</ol>` : ""}
           ${view.text ? `<div class="${textCls} mt-1">${view.text}</div>` : ""}
         </div>
-        ${variant === "inapp" && kind !== "installing" ? `<button type="button" data-install-hide aria-label="Скрыть подсказку" class="shrink-0 -mt-1 -mr-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400">${INSTALL_ICONS.close}</button>` : ""}
+        ${variant === "inapp" && kind !== "installing" ? `<button type="button" data-install-hide aria-label="Скрыть подсказку" class="shrink-0 -mt-1 -mr-1 w-8 h-8 rounded-lg flex items-center justify-center t-mute">${INSTALL_ICONS.close}</button>` : ""}
       </div>
       ${view.button ? `<button type="button" data-install-act="${view.button.act}" class="${btnCls(view.button)}">${view.button.label}</button>` : ""}
     </div>`;

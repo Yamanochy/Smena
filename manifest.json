@@ -1,16 +1,38 @@
 {
   "name": "Смена — Новосибирск",
   "short_name": "Смена",
-  "description": "Водители техники вносят смены сами: часы, техника, фото путевого листа",
+  "description": "Водители техники вносят смены сами: техника, заказчик, часы, фото путевого листа",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#14213D",
-  "theme_color": "#14213D",
+  "background_color": "#0A1220",
+  "theme_color": "#0A1220",
   "orientation": "portrait",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "related_applications": [
     {

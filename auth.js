@@ -5,9 +5,10 @@
 // в коде сайта виден каждому, кто откроет страницу.
 //   Руководитель — тот, чей email в списке MANAGER_EMAILS
 //   (и в правилах базы; именно правила — настоящая защита).
-//   Водитель — тот, чей аккаунт руководитель привязал к карточке
-//   в Табеле. До привязки человек видит только экран ожидания,
-//   к данным его не пускают сами правила базы.
+//   Водитель — тот, кому руководитель выдал доступ: нашему — в
+//   Табеле (привязал аккаунт к карточке), водителю подрядчика — в
+//   «Смене», вкладка «Водители». До этого человек видит только экран
+//   ожидания, к данным его не пускают сами правила базы.
 //
 // Аккаунты общие с Досатуем: у кого он уже есть, входит тем же
 // email и паролем и нажимает «Запросить доступ».
@@ -29,15 +30,15 @@ function authFrame(innerHtml) {
   // появляется подсказка про установку, и при выравнивании по центру поля
   // входа уезжали бы из-под пальца.
   authScreen.innerHTML = `
-    <div class="min-h-screen flex items-start justify-center px-5 pb-8 bg-diesel" style="padding-top:max(2rem,12vh)">
+    <div class="auth-wrap">
       <div class="w-full max-w-sm">
         <div class="text-center mb-6">
-          <img src="icon-192.png" alt="" class="w-16 h-16 rounded-2xl mx-auto mb-3 shadow" />
-          <div class="text-white text-2xl font-bold font-display">Смена</div>
-          <div class="text-white/50 text-xs font-num tracking-wide mt-1">ТЕХНИКА · НОВОСИБИРСК</div>
+          <img src="icon-192.png" alt="" class="auth-logo mx-auto mb-4" />
+          <div class="wordmark" style="font-size:30px">Смена</div>
+          <div class="eyebrow mt-2">Техника · Новосибирск</div>
         </div>
         <div data-install-slot data-variant="auth" data-place="top" class="mb-4" hidden></div>
-        <div class="bg-white rounded-xl p-5 space-y-3">${innerHtml}</div>
+        <div class="card p-5 space-y-3">${innerHtml}</div>
         <div data-install-slot data-variant="auth" data-place="bottom" class="mt-4" hidden></div>
       </div>
     </div>`;
@@ -45,47 +46,47 @@ function authFrame(innerHtml) {
   if (typeof refreshInstallUi === "function") refreshInstallUi();
 }
 
-const INPUT_CLS = "mt-1 w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm";
+const INPUT_CLS = "field";
 
 function renderLoginScreen(mode = "login", message = "", isError = true) {
   if (mode === "register") {
     authFrame(`
-      <div class="font-bold font-display text-lg text-diesel">Регистрация водителя</div>
-      <div class="text-xs text-slate-500">Если у тебя уже есть вход в Досатуй, регистрироваться не нужно — <a href="#" id="af-toggle2" class="font-semibold text-diesel underline">войди тем же email и паролем</a>.</div>
-      <label class="block text-xs text-slate-500">Фамилия, имя, отчество
+      <div class="title">Регистрация водителя</div>
+      <div class="text-[13px] t-soft">Если у тебя уже есть вход в Досатуй, регистрироваться не нужно — <a href="#" id="af-toggle2" class="link">войди тем же email и паролем</a>.</div>
+      <label class="lbl">Фамилия, имя, отчество
         <input id="af-name" autocomplete="name" class="${INPUT_CLS}" placeholder="Иванов Иван Иванович" />
       </label>
-      <label class="block text-xs text-slate-500">Телефон
+      <label class="lbl">Телефон
         <input id="af-phone" type="tel" autocomplete="tel" class="${INPUT_CLS}" placeholder="+7 900 000 00 00" />
       </label>
-      <label class="block text-xs text-slate-500">Email
+      <label class="lbl">Email
         <input id="af-email" type="email" autocomplete="username" class="${INPUT_CLS}" />
       </label>
-      <label class="block text-xs text-slate-500">Пароль (не короче 6 символов)
+      <label class="lbl">Пароль (не короче 6 символов)
         <input id="af-pass" type="password" autocomplete="new-password" class="${INPUT_CLS}" />
       </label>
-      <div id="af-error" class="text-sm hidden"></div>
-      <button id="af-submit" class="w-full py-3 rounded-lg bg-diesel text-white font-semibold text-sm">Зарегистрироваться</button>
-      <div class="text-xs text-slate-400">После регистрации руководитель подтвердит доступ — тогда приложение откроется.</div>
-      <div class="text-center text-xs text-slate-400 pt-1">Уже есть аккаунт? <a href="#" id="af-toggle" class="text-diesel font-semibold underline">Войти</a></div>`);
+      <div id="af-error" class="text-sm hidden" role="alert"></div>
+      <button id="af-submit" type="button" class="btn btn-gold btn-block">Зарегистрироваться</button>
+      <div class="text-xs t-mute">После регистрации руководитель подтвердит доступ — тогда приложение откроется.</div>
+      <div class="text-center text-[13px] t-soft pt-1">Уже есть аккаунт? <a href="#" id="af-toggle" class="link">Войти</a></div>`);
   } else {
     authFrame(`
-      <label class="block text-xs text-slate-500">Email
+      <label class="lbl">Email
         <input id="af-email" type="email" autocomplete="username" class="${INPUT_CLS}" />
       </label>
-      <label class="block text-xs text-slate-500">Пароль
+      <label class="lbl">Пароль
         <input id="af-pass" type="password" autocomplete="current-password" class="${INPUT_CLS}" />
       </label>
-      <div id="af-error" class="text-sm hidden"></div>
-      <button id="af-submit" class="w-full py-3 rounded-lg bg-diesel text-white font-semibold text-sm">Войти</button>
-      <button id="af-forgot" class="w-full text-xs text-slate-400 underline">Забыл пароль</button>
-      <div class="text-center text-xs text-slate-400 pt-1">Первый раз здесь? <a href="#" id="af-toggle" class="text-diesel font-semibold underline">Зарегистрироваться</a></div>`);
+      <div id="af-error" class="text-sm hidden" role="alert"></div>
+      <button id="af-submit" type="button" class="btn btn-gold btn-block">Войти</button>
+      <button id="af-forgot" type="button" class="btn btn-quiet btn-sm btn-block">Забыл пароль</button>
+      <div class="text-center text-[13px] t-soft pt-1">Первый раз здесь? <a href="#" id="af-toggle" class="link">Зарегистрироваться</a></div>`);
   }
 
   const errBox = document.getElementById("af-error");
   const say = (text, bad = true) => {
     errBox.textContent = text;
-    errBox.className = "text-sm " + (bad ? "text-brick" : "text-shift");
+    errBox.className = "text-sm " + (bad ? "t-bad" : "t-ok");
   };
   if (message) say(message, isError);
 
@@ -159,45 +160,45 @@ function friendlyAuthError(e) {
 
 // ---------- экраны «в приложение пока нельзя» ----------
 function renderGate(kind, info) {
-  const who = `<div class="text-xs text-slate-400">Аккаунт: ${escapeHtml(currentUser && currentUser.email || "")}</div>`;
-  const out = `<button id="gate-logout" class="w-full text-xs text-slate-400 underline pt-1">Выйти и войти другим аккаунтом</button>`;
+  const who = `<div class="text-xs t-mute break-all">Аккаунт: ${escapeHtml(currentUser && currentUser.email || "")}</div>`;
+  const out = `<button id="gate-logout" type="button" class="btn btn-quiet btn-sm btn-block">Выйти и войти другим аккаунтом</button>`;
   let html = "";
   if (kind === "checking") {
-    html = `<div class="text-sm text-slate-600">Проверяю доступ…</div>${who}${out}`;
+    html = `<div class="t-soft">Проверяю доступ…</div>${who}${out}`;
   } else if (kind === "offline") {
     html = `
-      <div class="font-bold font-display text-lg text-diesel">Нет сети</div>
-      <div class="text-sm text-slate-600">Для первого входа нужна связь: приложение должно проверить твой доступ. Как только сеть появится, проверка пройдёт сама.</div>
+      <div class="title">Нет сети</div>
+      <div class="text-sm t-soft">Для первого входа нужна связь: приложение должно проверить твой доступ. Как только сеть появится, проверка пройдёт сама.</div>
       ${who}${out}`;
   } else if (kind === "pending") {
     html = `
-      <div class="font-bold font-display text-lg text-diesel">Заявка отправлена</div>
-      <div class="text-sm text-slate-600">Руководитель подтвердит доступ, и приложение откроется само — заново входить не придётся.</div>
-      <div class="text-sm text-slate-600">Если ждёшь больше дня — позвони руководителю.</div>
-      ${info && info.name ? `<div class="text-xs text-slate-400">В заявке: ${escapeHtml(info.name)}${info.phone ? ", " + escapeHtml(info.phone) : ""}</div>` : ""}
+      <div class="title">Заявка отправлена</div>
+      <div class="text-sm t-soft">Руководитель подтвердит доступ, и приложение откроется само — заново входить не придётся.</div>
+      <div class="text-sm t-soft">Если ждёшь больше дня — позвони руководителю.</div>
+      ${info && info.name ? `<div class="note">В заявке: ${escapeHtml(info.name)}${info.phone ? ", " + escapeHtml(info.phone) : ""}</div>` : ""}
       ${who}${out}`;
   } else if (kind === "disabled") {
     html = `
-      <div class="font-bold font-display text-lg text-brick">Доступ отключён</div>
-      <div class="text-sm text-slate-600">Руководитель закрыл этому аккаунту доступ в приложение. Если это ошибка — позвони ему.</div>
+      <div class="title t-bad">Доступ отключён</div>
+      <div class="text-sm t-soft">Руководитель закрыл этому аккаунту доступ в приложение. Если это ошибка — позвони ему.</div>
       ${who}${out}`;
   } else if (kind === "request") {
     html = `
-      <div class="font-bold font-display text-lg text-diesel">Нужен доступ</div>
-      <div class="text-sm text-slate-600">Этот аккаунт ещё не подключён к приложению. Отправь заявку — руководитель её подтвердит.</div>
-      <label class="block text-xs text-slate-500">Фамилия, имя, отчество
+      <div class="title">Нужен доступ</div>
+      <div class="text-sm t-soft">Этот аккаунт ещё не подключён к приложению. Отправь заявку — руководитель её подтвердит.</div>
+      <label class="lbl">Фамилия, имя, отчество
         <input id="gate-name" autocomplete="name" class="${INPUT_CLS}" placeholder="Иванов Иван Иванович" value="${escapeHtml(info && info.name || "")}" />
       </label>
-      <label class="block text-xs text-slate-500">Телефон
+      <label class="lbl">Телефон
         <input id="gate-phone" type="tel" autocomplete="tel" class="${INPUT_CLS}" placeholder="+7 900 000 00 00" />
       </label>
-      <div id="gate-error" class="text-sm text-brick hidden"></div>
-      <button id="gate-submit" class="w-full py-3 rounded-lg bg-diesel text-white font-semibold text-sm">Запросить доступ</button>
+      <div id="gate-error" class="text-sm t-bad hidden" role="alert"></div>
+      <button id="gate-submit" type="button" class="btn btn-gold btn-block">Запросить доступ</button>
       ${who}${out}`;
   } else {
     html = `
-      <div class="font-bold font-display text-lg text-brick">Не получилось проверить доступ</div>
-      <div class="text-sm text-slate-600">${escapeHtml(info || "Попробуй закрыть и открыть приложение заново.")}</div>
+      <div class="title t-bad">Не получилось проверить доступ</div>
+      <div class="text-sm t-soft">${escapeHtml(info || "Попробуй закрыть и открыть приложение заново.")}</div>
       ${who}${out}`;
   }
   authFrame(html);
@@ -227,7 +228,7 @@ function renderGate(kind, info) {
   }
 }
 
-// заявка на доступ — её увидит руководитель в Табеле (вкладка «Водители»)
+// заявка на доступ — её увидит руководитель: в «Смене» (вкладка «Водители») и в Табеле
 function submitAccessRequest(name, phone) {
   return db.collection("nskUsers").doc(currentUser.uid).set({
     name,
@@ -267,8 +268,8 @@ async function resolveNoAccess(user) {
   }
 }
 
-// Следим за своим документом доступа: как только руководитель привяжет
-// аккаунт в Табеле — приложение откроется само; отключит — закроется.
+// Следим за своим документом доступа: как только руководитель выдаст
+// доступ — приложение откроется само; закроет — закроется.
 function watchAccess(user) {
   renderGate("checking");
   accessUnsub = db.collection("nskAccess").doc(user.uid)
@@ -276,12 +277,21 @@ function watchAccess(user) {
       if (currentUser !== user) return;
 
       if (snap.exists && snap.data().active === true) {
+        // руководитель мог поменять пометку «чей водитель» — тогда меняется и
+        // набор вкладок, и форма смены
+        const wasContractor = isContractorAccess(currentAccess);
         currentRole = "driver";
         currentAccess = snap.data();
         currentName = shortName(currentAccess.fullName);
         showShell();
-        if (!appStarted) startApp();
-        else { renderUserBar(); softRender(); } // руководитель поменял ставку или ФИО
+        if (!appStarted) { startApp(); return; }
+        renderUserBar();
+        if (wasContractor !== isContractorAccess(currentAccess)) {
+          if (typeof closeShiftForm === "function") closeShiftForm();
+          render();
+        } else {
+          softRender(); // поменялась ставка или ФИО
+        }
         return;
       }
 

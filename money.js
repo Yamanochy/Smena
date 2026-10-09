@@ -75,7 +75,9 @@ async function loadDosatuyMonth(year, month) {
 function renderMoney() {
   app.innerHTML = "";
   const wrap = el("div", "space-y-3");
-  wrap.appendChild(monthSwitcher());
+  const switcher = el("div", "card p-3");
+  switcher.appendChild(monthSwitcher());
+  wrap.appendChild(switcher);
 
   loadDosatuyMonth(selectedYear, selectedMonth);
   const dz = dosatuyByMonth[selectedYear + "-" + selectedMonth];
@@ -90,11 +92,12 @@ function renderMoney() {
   const remain = earned - advanced;
 
   // расчётный лист: строки вычитаются сверху вниз, итог — крупно
-  const sheet = el("div", "bg-white rounded-xl border border-slate-200 overflow-hidden");
+  const sheet = el("div", "card overflow-hidden");
+  sheet.id = "money-sheet";
   const line = (label, value, sub) => `
     <div class="flex items-baseline justify-between gap-3 px-4 py-3">
-      <div class="min-w-0"><div class="text-sm text-slate-700">${label}</div>${sub ? `<div class="text-[11px] text-slate-400">${sub}</div>` : ""}</div>
-      <div class="font-num font-semibold text-slate-800 shrink-0">${value}</div>
+      <div class="min-w-0"><div class="t-strong">${label}</div>${sub ? `<div class="text-xs t-soft">${sub}</div>` : ""}</div>
+      <div class="num font-semibold shrink-0">${value}</div>
     </div>`;
   const shiftsSub = t.count
     ? `${t.count} ${plural(t.count, "смена", "смены", "смен")}${t.hours ? ", " + fmtHours(t.hours) + " ч" : ""}`
@@ -102,18 +105,18 @@ function renderMoney() {
   let html = "";
   if (dosatuy) {
     html += line("Смены в Новосибирске", fmtMoney(t.pay), shiftsSub);
-    html += `<div class="border-t border-slate-100"></div>`;
+    html += `<hr class="hr" />`;
     html += line("Досатуй", fmtMoney(dosatuy), `${dz.trips} ${plural(dz.trips, "рейс", "рейса", "рейсов")}${dz.maintPay ? ", ТО и ремонт " + fmtMoney(dz.maintPay) : ""}`);
   } else {
     html += line("Начислено за смены", fmtMoney(t.pay), shiftsSub);
   }
-  html += `<div class="border-t border-slate-100"></div>`;
+  html += `<hr class="hr" />`;
   html += line("Выдано авансом", advanced ? "− " + fmtMoney(advanced) : fmtMoney(0),
     advances.length ? `${advances.length} ${plural(advances.length, "перевод", "перевода", "переводов")}` : "авансов не было");
   html += `
-    <div class="border-t-2 border-diesel px-4 py-4 flex items-end justify-between gap-3 ${remain < 0 ? "bg-brick/5" : "bg-shift/5"}">
-      <div class="text-sm font-semibold text-slate-700">${remain < 0 ? "Аванс больше начисленного на" : "Осталось получить"}</div>
-      <div class="font-num font-bold text-2xl leading-none ${remain < 0 ? "text-brick" : "text-shift"}">${fmtMoney(Math.abs(remain))}</div>
+    <div class="px-4 py-4 flex items-end justify-between gap-3 border-t-2 ${remain < 0 ? "border-flare bg-flare/10" : "border-gold bg-gold/10"}">
+      <div class="eyebrow ${remain < 0 ? "t-bad" : "t-gold"}">${remain < 0 ? "Аванс больше начисленного на" : "Осталось получить"}</div>
+      <div class="num font-bold text-[26px] leading-none ${remain < 0 ? "t-bad" : ""}">${fmtMoney(Math.abs(remain))}</div>
     </div>`;
   sheet.innerHTML = html;
   wrap.appendChild(sheet);
@@ -122,31 +125,29 @@ function renderMoney() {
   const known = new Set(myShifts.map((s) => s.id));
   const unsent = myOutbox().filter((q) => q.mode === "create" && !known.has(q.id) && inSelectedMonth(q.fields.date, selectedYear, selectedMonth)).length;
   if (unsent) {
-    wrap.appendChild(el("div", "rounded-xl border border-dashed border-route bg-route/10 px-3 py-2 text-xs text-slate-600",
+    wrap.appendChild(el("div", "note note-gold",
       `${unsent} ${plural(unsent, "смена ещё не отправлена", "смены ещё не отправлены", "смен ещё не отправлено")} и в сумму пока не ${plural(unsent, "вошла", "вошли", "вошло")}.`));
   }
 
-  wrap.appendChild(el("div", "text-xs font-bold text-slate-400 pt-1", `Авансы за ${MONTHS_RU[selectedMonth].toLowerCase()}`));
-  const card = el("div", "bg-white rounded-xl border border-slate-200 overflow-hidden");
+  wrap.appendChild(el("div", "eyebrow pt-2", `Авансы за ${MONTHS_RU[selectedMonth].toLowerCase()}`));
   if (!advances.length) {
-    card.appendChild(el("div", "p-5 text-sm text-slate-400 text-center", "За этот месяц авансов не было."));
+    wrap.appendChild(el("div", "card empty", "За этот месяц авансов не было."));
   } else {
-    const body = el("div", "divide-y divide-slate-100");
+    const card = el("div", "card rows");
     advances.forEach((a) => {
       const row = el("div", "px-4 py-3 flex items-center justify-between gap-3");
       row.innerHTML = `
         <div class="min-w-0">
-          <div class="text-sm text-slate-700">Переведено <span class="font-num">${a.date ? fmtRU(parseISO(a.date)) : "—"}</span></div>
-          ${a.note ? `<div class="text-xs text-slate-400 truncate">${escapeHtml(a.note)}</div>` : ""}
+          <div class="t-strong">Переведено <span class="num">${a.date ? fmtRU(parseISO(a.date)) : "—"}</span></div>
+          ${a.note ? `<div class="text-xs t-soft truncate">${escapeHtml(a.note)}</div>` : ""}
         </div>
-        <div class="font-num font-semibold text-route-600 shrink-0">${fmtMoney(a.amount)}</div>`;
-      body.appendChild(row);
+        <div class="num font-semibold t-gold shrink-0">${fmtMoney(a.amount)}</div>`;
+      card.appendChild(row);
     });
-    card.appendChild(body);
+    wrap.appendChild(card);
   }
-  wrap.appendChild(card);
 
-  wrap.appendChild(el("div", "text-[11px] text-slate-400 px-1",
+  wrap.appendChild(el("div", "text-xs t-mute px-1",
     "Аванс считается за тот месяц, за который выдан, даже если деньги пришли позже. Расчёт ведёт руководитель; если сумма не сходится — напиши в чат."));
 
   app.appendChild(wrap);

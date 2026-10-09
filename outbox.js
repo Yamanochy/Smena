@@ -13,6 +13,10 @@
 //    одна такая запись намертво стопорила всю очередь.
 // 3. Уже загруженные фото запоминаются — после обрыва связи
 //    догружаются только оставшиеся.
+//
+// Куда уходит запись, решается в момент отправки по свежему документу
+// доступа: наш водитель — в tabelShifts (Табель, зарплата), водитель
+// подрядчика — в nskWaybills (путевые подрядчиков, без денег).
 // ============================================================
 
 const OUTBOX_DB = "smena-outbox";
@@ -116,6 +120,13 @@ function explainSendError(e, item) {
   return "Не отправилось: " + ((e && e.message) || "неизвестная ошибка");
 }
 
+// ---------- куда пишем ----------
+const COL_OWN = "tabelShifts";        // смены наших водителей (коллекция Табеля)
+const COL_CONTRACTOR = "nskWaybills"; // путевые водителей подрядчиков
+function collectionForAccess(access) {
+  return isContractorAccess(access) ? COL_CONTRACTOR : COL_OWN;
+}
+
 // ---------- расчёт оплаты (та же формула, что в Табеле) ----------
 function accessRate(access, payType) {
   if (!access) return 0;
@@ -128,15 +139,19 @@ function computePay(payType, rate, hours) {
 
 // ---------- постановка в очередь ----------
 // mode: "create" — новая смена, "update" — правка уже отправленной.
-// docId — номер записи в tabelShifts (для новой выдаётся заранее).
-// fields — то, что ввёл водитель: { date, equipmentId, equipmentName, payType, hours, note }.
+// docId — номер записи в базе (для новой выдаётся заранее).
+// col — для правки: в какой коллекции лежит запись. Для новой не нужен:
+//       коллекция выбирается при отправке по документу доступа.
+// fields — то, что ввёл водитель: { date, equipmentId, equipmentName,
+//          customerId, customerName, payType, hours, note }.
 // Ставку и сумму сюда НЕ кладём: они подставляются в момент отправки
 // из свежей карточки доступа — так сумма всегда сходится с правилами базы.
-async function enqueueShift({ mode, docId, fields, keepUrls, blobs }) {
+async function enqueueShift({ mode, docId, col, fields, keepUrls, blobs }) {
   const item = {
     id: docId,
     uid: currentUser.uid,
     mode,
+    col: col || null,
     fields,
     keepUrls: keepUrls || [],   // фото, которые уже лежат в облаке (при правке)
     photoBlobs: blobs || [],    // новые фото, уже сжатые
@@ -168,8 +183,12 @@ async function outboxRemove(id) {
 
 // ---------- отправка одной записи ----------
 async function sendOutboxItem(item, access) {
-  const ref = db.collection("tabelShifts").doc(item.id);
   const f = item.fields;
+  // правка идёт туда, где запись лежит; новая — по тому, чей водитель сейчас
+  // (записи, поставленные в очередь прошлой версией, поля col не имеют — это Табель)
+  const col = item.mode === "update" ? (item.col || COL_OWN) : collectionForAccess(access);
+  const contractor = col === COL_CONTRACTOR;
+  const ref = db.collection(col).doc(item.id);
 
   // прошлая попытка могла оборваться уже после того, как смена дошла
   // до сервера — тогда второй раз её писать не нужно
@@ -193,13 +212,63 @@ async function sendOutboxItem(item, access) {
   item.attempts = (item.attempts || 0) + 1;
   await outboxPut(item);
 
-  const hours = f.payType === "hourly" ? Number(f.hours) : null;
+  // заказчик: в записях, поставленных в очередь прошлой версией, его нет
+  const hasCustomer = f.customerId !== undefined;
+  const customer = { customerId: f.customerId || "", customerName: f.customerName || "" };
+
+  // ---------- водитель подрядчика: путевой без ставки и суммы ----------
+  if (contractor) {
+    const hours = Number(f.hours);
+    if (!hours || hours <= 0) throw permanentError("В путевом не указаны часы. Удали эту запись и внеси смену заново.");
+    if (item.mode === "create") {
+      await withTimeout(ref.set({
+        date: f.date,
+        driverUid: currentUser.uid,
+        driverName: access.fullName,
+        contractorId: access.contractorId || "",
+        contractorName: access.contractorName || "",
+        equipmentId: f.equipmentId,
+        equipmentName: f.equipmentName,
+        ...customer,
+        hours,
+        note: f.note || "",
+        photoUrls,
+        createdByUid: currentUser.uid,
+        createdByName: shortName(access.fullName),
+        source: "driver-app",
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }), 20000);
+      return;
+    }
+    const cur = await withTimeout(ref.get({ source: "server" }), 15000);
+    if (!cur.exists) throw permanentError("Этой смены уже нет — её удалили.");
+    await withTimeout(ref.update({
+      date: f.date,
+      equipmentId: f.equipmentId,
+      equipmentName: f.equipmentName,
+      ...customer,
+      hours,
+      note: f.note || "",
+      photoUrls,
+    }), 20000);
+    return;
+  }
+
+  // ---------- наш водитель: смена со ставкой, идёт в Табель ----------
+  // Правку поставили в очередь, а человека с тех пор перевели к подрядчику:
+  // в зарплатных записях он больше ничего не меняет (правила базы её не пустят)
+  if (item.mode === "update" && isContractorAccess(access)) {
+    throw permanentError("Эта смена в Табеле, а ты теперь числишься водителем подрядчика. Поправить её может только руководитель — эту правку удали.");
+  }
+  // способ оплаты: в очереди его может не быть, если запись ставил в очередь
+  // водитель подрядчика, а руководитель потом перевёл его в наши
+  const payType = f.payType || (Number(f.hours) > 0 ? "hourly" : "shift");
+  const hours = payType === "hourly" ? Number(f.hours) : null;
+  const noRate = () => permanentError(`У тебя не задана ${payType === "hourly" ? "почасовая" : "посменная"} ставка — напиши руководителю.`);
 
   if (item.mode === "create") {
-    const rate = accessRate(access, f.payType);
-    if (!rate) {
-      throw permanentError(`У тебя не задана ${f.payType === "hourly" ? "почасовая" : "посменная"} ставка — напиши руководителю.`);
-    }
+    const rate = accessRate(access, payType);
+    if (!rate) throw noRate();
     await withTimeout(ref.set({
       date: f.date,
       driverId: access.driverId,
@@ -207,10 +276,11 @@ async function sendOutboxItem(item, access) {
       driverUid: currentUser.uid,
       equipmentId: f.equipmentId,
       equipmentName: f.equipmentName,
-      payType: f.payType,
+      ...customer,
+      payType,
       rate,                                   // ставка «замораживается» в записи
       hours,
-      computedPay: computePay(f.payType, rate, hours),
+      computedPay: computePay(payType, rate, hours),
       note: f.note || "",
       photoUrls,
       createdByUid: currentUser.uid,
@@ -226,18 +296,17 @@ async function sendOutboxItem(item, access) {
   const cur = await withTimeout(ref.get({ source: "server" }), 15000);
   if (!cur.exists) throw permanentError("Этой смены уже нет — её удалили.");
   const old = cur.data();
-  const rate = f.payType === old.payType ? Number(old.rate || 0) : accessRate(access, f.payType);
-  if (!rate) {
-    throw permanentError(`У тебя не задана ${f.payType === "hourly" ? "почасовая" : "посменная"} ставка — напиши руководителю.`);
-  }
+  const rate = payType === old.payType ? Number(old.rate || 0) : accessRate(access, payType);
+  if (!rate) throw noRate();
   await withTimeout(ref.update({
     date: f.date,
     equipmentId: f.equipmentId,
     equipmentName: f.equipmentName,
-    payType: f.payType,
+    ...(hasCustomer ? customer : {}),
+    payType,
     rate,
     hours,
-    computedPay: computePay(f.payType, rate, hours),
+    computedPay: computePay(payType, rate, hours),
     note: f.note || "",
     photoUrls,
   }), 20000);
