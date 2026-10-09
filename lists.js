@@ -18,9 +18,10 @@
 let equipmentCache = [];   // вся техника, включая убранную из списка
 let listsDoc = null;       // содержимое nskConfig/lists (null — документа ещё нет)
 let listsSeedTried = false;
-// Справочник «известен»: документ прочитан, либо сервер подтвердил, что его
-// ещё нет. Пока это не так, сохранять списки нельзя — иначе стартовые
-// списки из settings.js затёрли бы настоящие, которые просто не успели прийти.
+// Справочник «известен»: сервер хотя бы раз ответил — показал документ или
+// подтвердил, что его ещё нет. Пока ответ есть только из памяти телефона,
+// сохранять списки нельзя: иначе стартовые списки из settings.js (или
+// устаревшая копия) затёрли бы настоящие, которые просто не успели прийти.
 let listsKnown = false;
 
 function resetListsState() {
@@ -34,17 +35,26 @@ function subscribeLists() {
     softRender();
   }, (err) => console.error("Техника не загрузилась", err)));
 
-  unsubs.push(db.collection("nskConfig").doc("lists").onSnapshot((snap) => {
+  // includeMetadataChanges здесь обязателен. Первый ответ может прийти из
+  // памяти телефона («документа нет, но это не точно»), а подтверждение
+  // сервера — это смена одного лишь признака «из памяти / с сервера»: сами
+  // данные те же. Без этой настройки база о такой смене не сообщает, и
+  // справочник навсегда оставался бы «не загруженным»: он не создавался бы
+  // сам, а правка заказчиков и подрядчиков не сохранялась бы.
+  unsubs.push(db.collection("nskConfig").doc("lists").onSnapshot({ includeMetadataChanges: true }, (snap) => {
+    const before = JSON.stringify([listsDoc, listsKnown]);
     listsDoc = snap.exists ? snap.data() : null;
-    listsKnown = snap.exists || !snap.metadata.fromCache;
+    if (!snap.metadata.fromCache) listsKnown = true;
     // Руководитель открыл приложение, а документа ещё нет — создаём его из
     // стартовых списков. Так Табель и телефоны водителей видят один и тот
     // же список, а не каждый свою копию из settings.js.
     if (!snap.exists && !snap.metadata.fromCache && currentRole === "manager" && !listsSeedTried) {
       listsSeedTried = true;
-      saveLists({ customers: listItems("customers"), contractors: listItems("contractors") }).catch(() => {});
+      saveLists({ customers: listItems("customers"), contractors: listItems("contractors") })
+        .catch((e) => { listsSeedTried = false; console.warn("Справочник не создался, попробуем при следующем ответе базы", e); });
     }
-    softRender();
+    // служебные признаки меняются чаще данных — экран трогаем, только если есть что показать
+    if (JSON.stringify([listsDoc, listsKnown]) !== before) softRender();
   }, () => { /* нет сети или правила ещё старые — работаем со стартовыми списками */ }));
 }
 
